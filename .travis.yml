@@ -9,6 +9,7 @@ addons:
       - libsuitesparse-dev
       - liblapack-dev
       - libblas-dev
+cache: pip
 python:
 - 2.7
 env:
