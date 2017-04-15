@@ -1,6 +1,14 @@
-from scipy import stats
+from __future__ import division
+from operator import itemgetter
 import math
+
+from six.moves import zip, range
+
+from scipy import stats
 import numpy as np
+
+__version__ = '0.9.0'
+__all__ = ['LinearCurve', 'PowerCurve']
 
 
 class BaseCurve(object):
@@ -9,14 +17,14 @@ class BaseCurve(object):
     """
     Constructor for base class for curve classes. Sorts input data by x value.
 
-    >>> c = BaseCurve([2,3,1,4],[1,2,3,4])
-    >>> zip(c.x, c.y)
+    >>> c = BaseCurve([2, 3, 1, 4], [1, 2, 3, 4])
+    >>> list(zip(c.x, c.y))
     [(1, 3), (2, 1), (3, 2), (4, 4)]
     """
 
-    points = sorted(zip(x, y), key=lambda p: p[0])
-    self.x = tuple([p[0] for p in points])
-    self.y = tuple([p[1] for p in points])
+    points = sorted(zip(x, y), key=itemgetter(0))
+    self.x = tuple(p[0] for p in points)
+    self.y = tuple(p[1] for p in points)
 
 
 class LinearCurve(BaseCurve):
@@ -47,18 +55,32 @@ class LinearCurve(BaseCurve):
     >>> x = np.random.random(10)
     >>> y = np.random.random(10)
     >>> l = LinearCurve(x, y)
-    >>> s_y = math.sqrt(sum([(yi-l.slope*xi-l.y_intercept)**2 for xi,yi in zip(l.x, l.y)])/(len(l.x)-2))
+    >>> s_y = math.sqrt(sum([
+    ...   (yi- l.slope * xi - l.y_intercept)**2 for xi,yi in zip(l.x, l.y)
+    ... ]) / (len(l.x) - 2))
     >>> round(l.s_y, 6) == round(s_y, 6)
     True
     """
 
     super(LinearCurve, self).__init__(x, y)
-    self.slope, self.y_intercept, self.r_value, self.p_value, self.stderr = stats.linregress(self.x, self.y)
+    (
+      self.slope,
+      self.y_intercept,
+      self.r_value,
+      self.p_value,
+      self.stderr,
+    ) = stats.linregress(self.x, self.y)
 
     # Compute standard deviation in residuals
     # see http://en.wikipedia.org/wiki/Calibration_curve
-    self.s_y = math.sqrt(sum([(yi-self.slope*xi-self.y_intercept)**2 for xi,yi in zip(self.x, self.y)])/
-                         (len(self.x)-2))
+    if len(self.x) > 2:
+      self.s_y = math.sqrt(
+        sum(
+          (yi - self.slope * xi - self.y_intercept)**2 for xi, yi in zip(self.x, self.y)
+        ) / (len(self.x) - 2)
+      )
+    else:
+      self.s_y = np.nan
 
     # Limits of linearity
     if min_x is None or min_x < min(self.x):
@@ -72,18 +94,18 @@ class LinearCurve(BaseCurve):
     """
     Returns fitted curve as x-y points.
 
-    >>> LinearCurve([1,2,3],[3,6,9]).fit_points()
+    >>> LinearCurve([1, 2, 3], [3, 6, 9]).fit_points()
     ((1.0, 3.0), (2.0, 6.0), (3.0, 9.0))
-    >>> LinearCurve([1,2],[3,6]).fit_points()
+    >>> LinearCurve([1, 2], [3, 6]).fit_points()
     ((1.0, 3.0), (2.0, 6.0))
-    >>> LinearCurve([1,2,3],[3,3,9]).fit_points()
+    >>> LinearCurve([1, 2, 3], [3, 3, 9]).fit_points()
     ((1.0, 2.0), (2.0, 5.0), (3.0, 8.0))
     """
 
     nvalues = max(2, len(self.x))
-    bin = 1.0*(max(self.x)-min(self.x))/(nvalues-1)
-    x_values = [min(self.x)+i*bin for i in range(0, nvalues)]
-    return tuple([(x, self.slope*x+self.y_intercept) for x in x_values])
+    fit_bin = (max(self.x) - min(self.x)) / (nvalues - 1)
+    x_values = [min(self.x) + i * fit_bin for i in range(0, nvalues)]
+    return tuple((x, self.slope * x + self.y_intercept) for x in x_values)
 
   @property
   def r_squared(self):
@@ -103,7 +125,7 @@ class LinearCurve(BaseCurve):
 
   def interpolate(self, y_unknown, replicates=1):
     """
-    Find x value corresponding to the y value using the curve. Returns 
+    Find x value corresponding to the y value using the curve. Returns
 
     (est_x, err_f, min_x, max_x)
 
@@ -177,14 +199,14 @@ class LinearCurve(BaseCurve):
 
     """
 
-    x_est = (y_unknown-self.y_intercept)*1.0/self.slope
+    x_est = (y_unknown - self.y_intercept) / self.slope
 
     # see http://en.wikipedia.org/wiki/Calibration_curve
     xm = np.mean(self.x)
-    s_x = (self.s_y*1.0/abs(self.slope)) * math.sqrt(
-      1.0/replicates +
-      1.0/len(self.x) + 
-      (y_unknown - np.mean(self.y))**2 / (self.slope**2 * sum([(xi-xm)**2 for xi in self.x]))
+    s_x = (self.s_y * 1.0 / abs(self.slope)) * math.sqrt(
+      1.0 / replicates
+      + 1.0 / len(self.x)
+      + (y_unknown - np.mean(self.y))**2 / (self.slope**2 * sum([(xi - xm)**2 for xi in self.x]))
     )
 
     # two tailed error mode: take in confidence as a fraction, e.g. 0.99.
@@ -195,8 +217,8 @@ class LinearCurve(BaseCurve):
     # http://stackoverflow.com/questions/19339305/python-function-to-get-the-t-statistic
     # http://www.chem.utoronto.ca/coursenotes/analsci/StatsTutorial/ConcCalib.html
 
-    err = lambda conf_frac: stats.t.ppf(1-(1-conf_frac)*0.5, len(self.x)-2)*s_x
-    return x_est, err, self.min_x*1.0, self.max_x*1.0
+    err = lambda conf_frac: stats.t.ppf(1 - (1 - conf_frac) * 0.5, len(self.x) - 2) * s_x # noqa
+    return x_est, err, float(self.min_x), float(self.max_x)
 
 
 class PowerCurve(BaseCurve):
@@ -212,7 +234,12 @@ class PowerCurve(BaseCurve):
     >>> PowerCurve([0.01,0.1,1,10],[10,100,1000,10000]).s_y
     0.0
     >>> c = PowerCurve([0.01,0.1,1,10],[10,100,1000,9000])
-    >>> r = math.sqrt(((10-(c.scaling_factor*(0.01**c.exponent)))**2+(100-(c.scaling_factor*(0.1**c.exponent)))**2+(1000-(c.scaling_factor*(1**c.exponent)))**2+(9000-(c.scaling_factor*(10**c.exponent)))**2)/(4-2))
+    >>> r = math.sqrt(
+    ...   ((10 - (c.scaling_factor*(0.01**c.exponent)))**2
+    ...   + (100 - (c.scaling_factor*(0.1**c.exponent)))**2
+    ...   + (1000 - (c.scaling_factor*(1**c.exponent)))**2
+    ...   + (9000 - (c.scaling_factor*(10**c.exponent)))**2) / (4-2)
+    ... )
     >>> c.s_y == r
     True
     """
@@ -237,9 +264,10 @@ class PowerCurve(BaseCurve):
     self.exponent = self.log_linear.slope
 
     # Compute standard deviation in residuals
-    self.s_y = math.sqrt(sum([(yi-self.scaling_factor*(xi**self.exponent))**2
-                              for xi,yi in zip(self.x, self.y)])
-                         /(len(self.x)-2))
+    self.s_y = math.sqrt(
+      sum([(yi - self.scaling_factor * (xi**self.exponent))**2 for xi, yi in zip(self.x, self.y)])
+      / (len(self.x) - 2)
+    )
 
   def fit_points(self):
     """
@@ -250,14 +278,14 @@ class PowerCurve(BaseCurve):
     """
 
     nvalues = max(2, len(self.x))
-    bin = 1.0*(math.log10(max(self.x))-math.log10(min(self.x)))/(nvalues-1)
-    log_x_values = [math.log10(min(self.x))+i*bin for i in range(0, nvalues)]
+    fit_bin = (math.log10(max(self.x)) - math.log10(min(self.x))) / (nvalues - 1)
+    log_x_values = [math.log10(min(self.x)) + i * fit_bin for i in range(0, nvalues)]
     x_values = [10**n for n in log_x_values]
-    return tuple([(x, self.scaling_factor*(x**self.exponent)) for x in x_values])
+    return tuple((x, self.scaling_factor * (x**self.exponent)) for x in x_values)
 
   def interpolate(self, y_unknown, replicates=1):
     """
-    Find x value corresponding to the y value using the curve. Returns 
+    Find x value corresponding to the y value using the curve. Returns
 
     (est_x, err_f, min_x, max_x)
 
@@ -294,9 +322,9 @@ class PowerCurve(BaseCurve):
 
     def err(conf_frac):
       err = log_err(conf_frac)
-      rng = (log_est[0]-err, log_est[0]+err)
+      rng = (log_est[0] - err, log_est[0] + err)
       rng = [10**n for n in rng]
-      return (rng[1]-rng[0])*1.0/2
+      return (rng[1] - rng[0]) * 0.5
 
     return 10**log_est[0], err, 10**log_est[2], 10**log_est[3]
 
