@@ -15,7 +15,7 @@ python:
 env:
 - TOXENV=py27
 install:
-- pip install --requirement requirements.txt
+- travis_wait pip install -vvv --requirement requirements.txt
 - pip install --editable .
 script:
 - make test-tox
