@@ -38,13 +38,13 @@ class LinearCurve(BaseCurve):
     """
     Constructs a linear curve.
 
-    >>> LinearCurve([1,2,3],[3,6,9]).slope
+    >>> LinearCurve([1, 2, 3], [3, 6, 9]).slope
     3.0
-    >>> LinearCurve([1,2,3],[5,8,11]).y_intercept
+    >>> LinearCurve([1, 2, 3], [5, 8, 11]).y_intercept
     2.0
-    >>> LinearCurve([1,2,3],[1,4,7]).y_intercept
+    >>> LinearCurve([1, 2, 3], [1, 4, 7]).y_intercept
     -2.0
-    >>> LinearCurve([1,2,3],[3,6,9]).s_y
+    >>> LinearCurve([1, 2, 3], [3, 6, 9]).s_y
     0.0
 
     >>> x = np.random.random(10)
@@ -105,6 +105,7 @@ class LinearCurve(BaseCurve):
     nvalues = max(2, len(self.x))
     fit_bin = (max(self.x) - min(self.x)) / (nvalues - 1)
     x_values = [min(self.x) + i * fit_bin for i in range(0, nvalues)]
+
     return tuple((x, self.slope * x + self.y_intercept) for x in x_values)
 
   @property
@@ -113,7 +114,7 @@ class LinearCurve(BaseCurve):
     Returns the R^2 value of the curve. R is the correlation between the x and
     y values.
 
-    >>> LinearCurve([1,2,3],[3,6,9]).r_squared
+    >>> LinearCurve([1, 2, 3], [3, 6, 9]).r_squared
     1.0
     >>> x = np.random.random(10)
     >>> y = np.random.random(10)
@@ -144,14 +145,14 @@ class LinearCurve(BaseCurve):
     extrapolated, this is the highest quantifiable x value that is lower than
     the x value that would have been extraploated for y_unknown.
 
-    >>> c = LinearCurve([1, 5],[10, 50])
+    >>> c = LinearCurve([1, 5], [10, 50])
     >>> x, err, min_x, max_x = c.interpolate(40)
     >>> x
     4.0
     >>> err(0.95)
     nan
 
-    >>> c = LinearCurve([1,2,3],[3,6,9])
+    >>> c = LinearCurve([1, 2, 3],[3, 6, 9])
     >>> x, err, min_x, max_x = c.interpolate(7.5)
     >>> x
     2.5

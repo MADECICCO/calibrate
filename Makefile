@@ -1,15 +1,19 @@
 .PHONY: image \
 	clean clean-pyc clean-build clean-js \
-	build_assets \
-	test test-tox \
+	test \
 	bump/major bump/minor bump/patch \
 	start \
 	release
+SHELL = /bin/bash
+.SHELLFLAGS = -c
 
 CALIBRATE_HOME ?= /usr/src/calibrate
-SETUP = python setup.py
+
+CONDA = source activate calibrate;
+SETUP = ${CONDA} python setup.py
 
 all: test-tox
+
 
 clean: clean-build clean-pyc clean-js
 
@@ -24,29 +28,10 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 test:
-	python setup.py nosetests
+	${SETUP} nosetests
 
-test-tox:
-	tox
-
-bump/major bump/minor bump/patch:
-	bumpversion --verbose $(@F)
-
-
-release: clean sdist bdist_wheel
-	twine upload dist/*
-
-sdist:
-	${SETUP} sdist
-	ls -l dist
-
-bdist_wheel:
-	${SETUP} bdist_wheel
-	ls -l dist
-
-start: build_assets
-	${MANAGE} runserver ${SERVER_IP}:${SERVER_PORT}
-
+bump/major bump/minor bump/patch: conda
+	${CONDA} bumpversion --verbose $(@F)
 
 MAKE_EXT = docker-compose run --rm calibrate make -C ${CALIBRATE_HOME}
 

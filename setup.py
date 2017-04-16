@@ -43,7 +43,6 @@ setup(
     'six',
   ],
   tests_require=[
-    'tox',
     'nose',
     'coverage',
   ],
