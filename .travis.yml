@@ -15,7 +15,7 @@ install:
   - travis/install-conda.sh
   - export PATH="$MINICONDA_DIR/bin:$PATH"
   - hash -r
-  - conda create --name=calibrate python=$TRAVIS_PYTHON_VERSION
+  - conda env list | grep -q calibrate || conda create --name=calibrate python=$TRAVIS_PYTHON_VERSION
   - conda env update --name=calibrate --file=environment.yml
 script:
   - make test
