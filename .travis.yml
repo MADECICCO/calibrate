@@ -1,0 +1,31 @@
+language: python
+sudo: false
+
+cache:
+  directories:
+    - $HOME/miniconda
+
+env:
+  global:
+    - MINICONDA_DIR="$HOME/miniconda"
+
+python:
+  - 2.7
+install:
+  - travis/install-conda.sh
+  - export PATH="$MINICONDA_DIR/bin:$PATH"
+  - hash -r
+  - conda create --name=calibrate python=$TRAVIS_PYTHON_VERSION
+  - conda env update --name=calibrate --file=environment.yml
+script:
+  - make test
+deploy:
+  provider: pypi
+  user: ginkgodev
+  distributions: sdist bdist_wheel
+  skip_upload_docs: true
+  password:
+    secure: Jf3d7Y26Ve9wDySxNLt3/nHnO+4j0agVIyqolm+I1AZE/eGisvCSJTqXJWrueYBq95Z2noUzBVjPWfu0+0dan4AT1+DZTbigqg2QAubcMQBY54Kazq40uQkg6E+mc17qkl9tf5U/G10PZ1jmLmrt4kjybq5Rpizjxa1pKnVfzKeJf2RAc7UN+iXUKa1CvJSgoZ4LOBqhQZYh13mLbNOXe7fQjIikyYc2bP9bA4b+UrzFOBydLES8hdGbU7/Yfmy/4JcCOPDf5gSTyd9Q0hA1JgDxK9x25VbnIfbzgFPOShsNsbvwGahb9Ev/aAYsCfd+GI20V47r11Dc73KxwrIlVJ53TcdsRQpQd85yFXZGl73R/m/pi68hEBqjtoInWrV2AsPgRY3m58CTYVeqtlIKwNM5e9liYZ2yTczYIWdlrntnH/+bsQdOgEkk3NBKic4OwIdC78L+E36AFdhArTvulX0QXCRqb68aIVruw+MPxP0JmhG3eQoErgj9+UgGknpm66OMfHjj5v9HF9DHUD0CCd4L+FhXXAfdIxKX7gWi2zcsWy4ohvWbl+2E1gGlNqkoIA7ETYTNvCRbyYBoixmiFr6kxE00NMz4euCMmbY+R5ZKvqpxlKLxUe/MC92bOx+1p0O8czgm4vNH0T23SoKJ1RtdMHSkUqMywN/0Z3P2/U0=
+  on:
+    tags: true
+    repo: ginkgobioworks/calibrate
