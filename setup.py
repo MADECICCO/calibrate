@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
   name='calibrate',
-  version='0.9.0',
+  version='0.10.0',
 
   author='Ginkgo Bioworks, Benjie Chen',
   author_email='devs@ginkgobioworks.com, benjie@alum.mit.edu',

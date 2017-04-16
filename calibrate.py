@@ -7,7 +7,7 @@ from six.moves import zip, range
 from scipy import stats
 import numpy as np
 
-__version__ = '0.9.0'
+__version__ = '0.10.0'
 __all__ = ['LinearCurve', 'PowerCurve']
 
 
