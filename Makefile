@@ -30,7 +30,7 @@ clean-pyc:
 test:
 	${SETUP} nosetests
 
-bump/major bump/minor bump/patch: conda
+bump/major bump/minor bump/patch:
 	${CONDA} bumpversion --verbose $(@F)
 
 MAKE_EXT = docker-compose run --rm calibrate make -C ${CALIBRATE_HOME}
