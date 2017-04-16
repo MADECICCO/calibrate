@@ -8,9 +8,11 @@ services:
         - GIT_USER_EMAIL
     volumes:
       - caches:/root/.cache
+      - conda:/opt/conda
       - .:${CALIBRATE_HOME:-/usr/src/calibrate}
     tty:
       true
 
 volumes:
   caches:
+  conda:
